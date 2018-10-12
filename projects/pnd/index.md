@@ -1,11 +1,12 @@
 ---
-release: 0.2
-date: 2018-05-14
+release: 0.2.1
+date: 2018-10-11
 authors:
- - L. Bianchi, lkbianchi@gmail.com
+ - L. Bianchi, me@ludob.com
 ---
 
 # Changelog
+- 0.2.1: Minor edits
 - 0.2: Create Markdown version
 - 0.1: Initial draft
 
@@ -44,15 +45,15 @@ Performing the task programmatically offers in addition a series of advantages t
 ### There should be one, and possibly only one way to do it
 If a task is identified as common, then the functionality is included in `pnd`, and users instructed to perform the task through `pnd`.
 Adding new functionality to `pnd` also happens in a centralized way (either via core developers implementing it, or via pull requests), and a new version of the tool is released.
-In this way, all users are notified of the update through the release notes.
+In this way, all users are notified of the updates (and the availability of new functionality, or improvements of existing workflows) through the release notes.
 
 ### Separation of concerns between domain and implementation
 It's generally possible to categorize an option or task as belonging either to the domain (in this case, simulations with PandaRoot) or the implementation.
 Domain options should be exposed to the user, in the most consistent way across separate functionalities, while implementation options should be given sane defaults so that they can be safely ignored, but overrideable by experienced users.
 
-### Do not break backwards compatibility of existing workflows
-The adoption of the tool should be recommended, not unavoidable. The introduction of the new tool should not prevent expert users to use their preferred workflows.
-
+### Do not break backwards compatibility with existing workflows
+At least during the initial phase, the adoption of the tool should be recommended, not unavoidable.
+The introduction of the new tool not prevent expert users to continue using their preferred workflows.
 
 # Examples
 
@@ -119,7 +120,7 @@ $ root -l macro.C
 ### Issues
 - Launching environment is overwritten by the simulation environment
     + In other words, the simulation environment leaks into the launching environment. As system environment is global state, this can lead to hard-to-catch bugs.
-    + Conceptually, the simulation and steering environment should be kept separately. This issue manifests itself in a particularly frustrating way when one wants to compare simulation results across different versions of the framework, a very common task to compare the effects of e.g. changes in the geometry of the detector. Not only the required steps are cumbersome, they are highly dependent on the order with which they were performed. Launching  the jobs in parallel, depending on the strategy, would introduce another non-deterministic layer of confusion.
+    + Conceptually, the simulation and steering environment should be kept separate. This issue manifests itself in a particularly frustrating way when one wants to compare simulation results across different versions of the framework, a very common task to compare the effects of e.g. changes in the geometry of the detector. Not only the required steps are cumbersome, they are highly dependent on the order with which they were performed. Launching  the jobs in parallel, depending on the strategy, would introduce another non-deterministic layer of confusion.
 
 ### Proposed solutions
 
@@ -166,7 +167,8 @@ $ pnd run -m macro.C -n 1e6 --cluster
 ```
 In this case `pnd` will take care of all the complicated but non-interesting steps needed to run the simulation on the cluster, without the user needing to change anything.
 
-Crucially, continuing along this line of thought, it wouldn't really matter whether there is any version of the framework installed locally, as long as the `pnd` command is available. Even though this functionality is not yet available, the transition to a cloud-based model, with instances of simulation machines running remotely, would be almost completely seamless for the user, thanks to the high-level semantics provided by `pnd`.
+Crucially, continuing along this line of thought, it wouldn't really matter whether there is any version of the framework installed locally, as long as the `pnd` command is available.
+Even though this functionality is not yet available, the transition to a cloud-based model, with instances of simulation machines running remotely, would be almost completely seamless for the user, thanks to the high-level semantics provided by `pnd`.
 
 The commonly identified simulation phases are: `sim`, `digi`, `reco`, `pid` and `ana`. `pnd` is aware of this, and can perform simple heuristics based on e.g. the filename of the requested macro.
 ```sh
@@ -182,7 +184,7 @@ $ pnd run fullsim # will run macros from the current directory sequentially, acc
 Values of simulation parameters are hard-coded in the macros or Tasks used to steer the simulation.
 
 ### Issues
-- Macros are intended for interactive use, so this is somehow matching their intended purpose. However, running a macro with different values of one or more parameters is a very common task. If the value is written in the macro, it must be changed manually at every interaction, as there is no way of doing so automatically
+- Macros are intended for interactive use, so this is somehow matching their intended purpose. However, running a macro with different values of one or more parameters is a very common task. If the value is written (hard-coded) in the macro, it must be changed manually at every interaction, as there is no way of doing so automatically
 - Values set in Tasks are even more problematic, since changing them requires their re-compilation across every version of the framework.
 
 ### Proposed solutions
@@ -222,20 +224,22 @@ In addition, it would be desirable to be able to edit parameter at the command l
 ```sh
 $ pnd run -m macro.C --settings=settings.yaml --evtgen_beam_momentum=4.334  # simulation runs with 4.334 as beam momentum
 ```
-To allow this in an unambiguous way, `pnd` generates a second file with the merged parameter map. The file is not supposed to be edited directly by the user, and is loaded in the macro by not specifying arguments to the constructor:
+To allow this in an unambiguous way, `pnd` generates a second file with the merged parameter map.
+The file is not supposed to be edited directly by the user, and is loaded in the macro by not specifying arguments to the constructor:
 ```c++
 Settings sett;
 ```
 
 ## Debugging
-In any user-facing software project without a dedicated team for user management, developers will inevitably find themselves dividing their time between working on the code and assisting the users. `pnd` can help in this regard, by offering an automated way of collecting information about the user's environment without the user needing to know what exactly, and how, to collect it.
+In any user-facing software project without a dedicated team for user management, developers will inevitably find themselves dividing their time between working on the code and assisting the users.
+`pnd` can help in this regard, by offering an automated way of collecting information about the user's environment without the user needing to know what exactly, and how, to collect it.
 
-Trivially, by telling the user to run
+In the simplest cases, by telling the user to run
 ```sh
 $ pnd info --troubleshoot/--detailed/--system
 ```
-
-and paste the output on the technical support forum, the interaction between supporting developer and user is much more efficient. This is a perfect examples of the advantages provided according to the "API, not tutorials" principle.
+and paste the output on the technical support forum, the interaction between supporting developer and user is much more efficient.
+This is a perfect example of the advantages provided according to the "API, not tutorials" principle.
 
 The same principle can be used to share the current environment (macro, framework version, parameter files) with another user, to perform cross-checks or report potential bugs:
 ```sh
@@ -249,7 +253,6 @@ Even if a full simulation of the detector is needed in most cases, a common use 
 ### Issues
 From the point of view of the user, these two tasks are two sides of the same coin, especially considering that the simulation parameters needed for a generator-level study are a subset of those needed for a full simulation. However, practically speaking, even though the same generator (EvtGen) is used for generator-level studies and in the initial phase of full simulations, the concrete workflow is very different. The user-facing part of the generator is written independently from the macro/Task system, and is invoked as a separate executable, `EvtGenStandalone`.
 
-
 ### Proposed solutions
 An ideal solution would be to act at a deeper level, by exposing a standalone EvtGen workflow from within a macro or Task similarly to the full simulation. However, through `pnd`, the need for this more radical refactoring can be obviated by offering a common API on top of an adaptation layer:
 
@@ -260,14 +263,17 @@ $ pnd run fullsim --settings=settings.yml -d/--decfile=process-foo.dec -p/--pdtf
 # for the generator-level only: wraps the concrete path to the EvtGenStandalone executable, transparently to the user
 $ pnd run gen --settings=settings.yml -d/--decfile=process-foo.dec -p/--pdtfile=particles1
 ```
-A post-processing step of the `pnd run gen` command can ensure that the output is in the same format as 
-
+A post-processing hook of the `pnd run gen` command can ensure that the output is in the same format as the `fullsim` output.
+Again, once the standalone EvtGen refactoring is performed, the implementation of `pnd run gen` can be modified without changes to its user-facing API.
 
 # Implementation
 
 ## Language
 
-The programming language chosen for running `pnd` is Python. The choice is strongly motivated by the almost perfect overlap between the implementation requirements and Python's strong suits. In particular, the large ecosystem of available libraries makes the development very convenient since most of the lower-level functionality is already available, and developers can concentrate on integrating the various elements and implementing the domain logic. The readability and the increasing popularity among scientists also are relevant, since the core idea of `pnd` is to be developed continuously to develop new functionality.
+The programming language chosen for running `pnd` is Python.
+This choice is strongly motivated by the almost perfect overlap between the implementation requirements and Python's strong suits.
+In particular, the large ecosystem of available libraries makes the development very convenient since most of the lower-level functionality is already available, and developers can concentrate on integrating the various elements and implementing the domain logic.
+The readability and the increasing popularity among scientists also are relevant, since the core idea of `pnd` is to be developed continuously to develop new functionality.
 In any case, the choice of the language remains an implementation detail, and as long as the API is kept stable, users would not be affected by a change in this regard.
 
 ## Libraries
